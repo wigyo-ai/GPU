@@ -33,7 +33,7 @@
   <div class="col-12 col-lg-6">
     <div class="card h-100">
       <div class="card-header d-flex align-items-center gap-2 py-2">
-        <i class="bi bi-cpu text-info"></i>
+        <i class="bi bi-cpu text-warning"></i>
         <span class="fw-semibold">Payload Configuration</span>
       </div>
       <div class="card-body d-flex flex-column gap-3">
@@ -113,7 +113,7 @@
   <div class="col-12 col-lg-6">
     <div class="card h-100" id="resultsCard">
       <div class="card-header d-flex align-items-center gap-2 py-2">
-        <i class="bi bi-bar-chart-fill text-info"></i>
+        <i class="bi bi-bar-chart-fill text-warning"></i>
         <span class="fw-semibold">Execution Results</span>
         <a id="resultsPermalink" href="#" class="ms-auto text-secondary small" style="display:none">
           <i class="bi bi-link-45deg"></i> Permalink
@@ -374,7 +374,8 @@ function displayResults(data) {
   (scoring.signals || []).forEach(s => {
     const li = document.createElement("li");
     li.style.color = s.startsWith("[REFUSAL]") ? "#44ee88" :
-                     s.startsWith("[COMPLY]")  ? "#ff8080" : "#aaaaaa";
+                     s.startsWith("[COMPLY]")  ? "#ff8080" :
+                     s.startsWith("[GARAK]")   ? "#ffc107" : "#aaaaaa";
     li.textContent = s;
     signalList.appendChild(li);
   });

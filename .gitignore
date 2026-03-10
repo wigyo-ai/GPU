@@ -1,0 +1,13 @@
+# Credentials — never commit these
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Garak cache / data
+.garak/
+garak_data/
