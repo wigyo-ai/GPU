@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Result {{ result_id[:8] }} — ATLAS Red Team Harness{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb" style="font-size:.85rem">
+    <li class="breadcrumb-item"><a href="/" class="text-secondary text-decoration-none">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/history" class="text-secondary text-decoration-none">History</a></li>
+    <li class="breadcrumb-item active" style="color:var(--atlas-accent)">Result {{ result_id[:8] }}</li>
+  </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+  <h1 class="h4 fw-bold mb-0 text-white">
+    <i class="bi bi-file-earmark-bar-graph me-2" style="color:var(--atlas-accent)"></i>
+    Attack Execution Report
+  </h1>
+  <div class="ms-auto d-flex gap-2 flex-wrap">
+    <a href="/technique/{{ result.technique_id }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-repeat me-1"></i>Re-run Technique
+    </a>
+    <a href="/history" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-clock-history me-1"></i>History
+    </a>
+  </div>
+</div>
+
+<!-- Verdict banner -->
+<div class="card mb-4"
+     style="border-color:{% if result.verdict == 'SUCCESSFUL' %}#ff4444{% elif result.verdict == 'BLOCKED' %}#00aa44{% else %}#555{% endif %}">
+  <div class="card-body d-flex align-items-center gap-4 py-3 flex-wrap">
+
+    <div class="verdict-{{ result.verdict | lower }}">
+      {% if result.verdict == 'SUCCESSFUL' %}
+        <i class="bi bi-exclamation-circle-fill me-2"></i>ATTACK SUCCESSFUL
+      {% elif result.verdict == 'BLOCKED' %}
+        <i class="bi bi-shield-check-fill me-2"></i>ATTACK BLOCKED
+      {% else %}
+        <i class="bi bi-question-circle-fill me-2"></i>UNKNOWN
+      {% endif %}
+    </div>
+
+    <div>
+      <div class="small text-secondary">Confidence</div>
+      <div class="h5 mb-0 fw-bold">{{ result.confidence_pct }}%</div>
+    </div>
+
+    <div>
+      <div class="small text-secondary">Technique</div>
+      <div class="fw-semibold">{{ result.technique_name }}</div>
+      <div class="text-secondary" style="font-size:.75rem">{{ result.technique_id }}</div>
+    </div>
+
+    <div>
+      <div class="small text-secondary">Tactic</div>
+      <div class="fw-semibold">{{ result.tactic_name }}</div>
+    </div>
+
+    <div class="ms-auto text-end">
+      <div class="small text-secondary">Executed</div>
+      <div class="small">{{ result.timestamp }}</div>
+    </div>
+  </div>
+
+  <!-- Confidence bar -->
+  <div class="progress mx-3 mb-3" style="height:4px">
+    <div class="progress-bar {% if result.verdict == 'SUCCESSFUL' %}bg-danger{% elif result.verdict == 'BLOCKED' %}bg-success{% else %}bg-secondary{% endif %}"
+         style="width:{{ result.confidence_pct }}%"></div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Payload column ── -->
+  <div class="col-12 col-lg-6">
+
+    <!-- Probe info -->
+    <div class="card mb-4">
+      <div class="card-header py-2 small fw-semibold">
+        <i class="bi bi-cpu me-2 text-info"></i>Probe Details
+      </div>
+      <div class="card-body">
+        <div class="row g-2 small">
+          <div class="col-4 text-secondary">Module</div>
+          <div class="col-8 text-break" style="font-family:monospace">{{ result.probe_module or "—" }}</div>
+          <div class="col-4 text-secondary">Class</div>
+          <div class="col-8" style="font-family:monospace">{{ result.probe_class or "—" }}</div>
+          <div class="col-4 text-secondary">Model</div>
+          <div class="col-8">{{ result.model or "server default" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Original payload -->
+    <div class="card mb-4">
+      <div class="card-header py-2 small fw-semibold">
+        <i class="bi bi-file-text me-2 text-secondary"></i>Original Payload
+        <span class="text-secondary fw-normal ms-1">(from Garak probe)</span>
+      </div>
+      <div class="card-body p-0">
+        <pre class="payload-area m-0 p-3" style="border:none;border-radius:0 0 7px 7px;max-height:300px;overflow-y:auto">{{ result.original_payload }}</pre>
+      </div>
+    </div>
+
+    <!-- Modified payload -->
+    <div class="card mb-4">
+      <div class="card-header py-2 small fw-semibold">
+        <i class="bi bi-pencil-square me-2" style="color:var(--atlas-accent)"></i>Modified Payload
+        <span class="text-secondary fw-normal ms-1">(as sent to model)</span>
+      </div>
+      <div class="card-body p-0">
+        <pre class="payload-area m-0 p-3" style="border:none;border-radius:0 0 7px 7px;max-height:300px;overflow-y:auto">{{ result.modified_payload }}</pre>
+      </div>
+    </div>
+
+    {% if result.system_prompt %}
+    <div class="card mb-4">
+      <div class="card-header py-2 small fw-semibold">
+        <i class="bi bi-gear me-2 text-secondary"></i>System Prompt Override
+      </div>
+      <div class="card-body p-0">
+        <pre class="payload-area m-0 p-3" style="border:none;border-radius:0 0 7px 7px">{{ result.system_prompt }}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ── Response + scoring column ── -->
+  <div class="col-12 col-lg-6">
+
+    <!-- Model response -->
+    <div class="card mb-4">
+      <div class="card-header py-2 small fw-semibold">
+        <i class="bi bi-robot me-2 text-info"></i>Model Response
+      </div>
+      <div class="card-body p-0">
+        <div class="response-area m-0 p-3"
+             style="border:none;border-radius:0 0 7px 7px;max-height:400px;overflow-y:auto">
+          {% if result.llm_error %}
+            <span class="text-danger">Error: {{ result.llm_error }}</span>
+          {% elif result.model_response %}
+            {{ result.model_response }}
+          {% else %}
+            <span class="text-secondary">(no response)</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoring breakdown -->
+    <div class="card mb-4">
+      <div class="card-header py-2 small fw-semibold">
+        <i class="bi bi-bar-chart me-2 text-info"></i>Scoring Breakdown
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-4 text-center">
+            <div class="h4 fw-bold text-danger mb-0">{{ result.scoring.compliance_score }}</div>
+            <div class="text-secondary small">Compliance<br>score</div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="h4 fw-bold text-success mb-0">{{ result.scoring.refusal_score }}</div>
+            <div class="text-secondary small">Refusal<br>score</div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="h4 fw-bold mb-0"
+                 style="color:{% if result.scoring.garak_detector == 'SUCCESSFUL' %}#ff4444{% elif result.scoring.garak_detector == 'BLOCKED' %}#00aa44{% else %}#555{% endif %}">
+              {{ result.scoring.garak_detector or "N/A" }}
+            </div>
+            <div class="text-secondary small">Garak<br>detector</div>
+          </div>
+        </div>
+
+        <!-- Signal list -->
+        {% if result.scoring.signals %}
+        <div class="border-top pt-3" style="border-color:var(--atlas-border)!important">
+          <div class="small text-secondary fw-semibold mb-2">Matched Signals</div>
+          <ul class="list-unstyled mb-0">
+            {% for signal in result.scoring.signals %}
+            <li class="small mb-1" style="font-family:monospace;font-size:.75rem;
+                color:{% if signal.startswith('[REFUSAL]') %}#44ee88
+                      {% elif signal.startswith('[COMPLY]') %}#ff8080
+                      {% elif signal.startswith('[GARAK]') %}#00d4ff
+                      {% else %}#aaaaaa{% endif %}">
+              {{ signal }}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% else %}
+        <div class="text-secondary small text-center pt-2">No scoring signals recorded.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

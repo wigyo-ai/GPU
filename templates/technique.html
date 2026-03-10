@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+{% block title %}{{ technique.name }} — ATLAS Red Team Harness{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb" style="font-size:.85rem">
+    <li class="breadcrumb-item"><a href="/" class="text-secondary text-decoration-none">Dashboard</a></li>
+    <li class="breadcrumb-item text-secondary">{{ tactic.name }}</li>
+    <li class="breadcrumb-item active" style="color:var(--atlas-accent)">{{ technique.name }}</li>
+  </ol>
+</nav>
+
+<!-- Technique header -->
+<div class="card mb-4">
+  <div class="card-body d-flex gap-4 align-items-start">
+    <i class="{{ tactic.icon }}" style="font-size:2.5rem;color:var(--atlas-accent);flex-shrink:0"></i>
+    <div class="flex-grow-1">
+      <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+        <h1 class="h4 mb-0 fw-bold text-white">{{ technique.name }}</h1>
+        <span class="badge badge-{{ technique.severity }}">{{ technique.severity | capitalize }}</span>
+        <span class="badge text-bg-secondary">{{ technique_id }}</span>
+      </div>
+      <p class="text-secondary mb-0">{{ technique.description }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Main layout: editor + results -->
+<div class="row g-4">
+
+  <!-- ── Left: Probe selection + payload editor ── -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center gap-2 py-2">
+        <i class="bi bi-cpu text-info"></i>
+        <span class="fw-semibold">Payload Configuration</span>
+      </div>
+      <div class="card-body d-flex flex-column gap-3">
+
+        <!-- Step 1: Select probe -->
+        <div>
+          <label class="form-label small text-secondary fw-semibold mb-1">
+            <i class="bi bi-plug me-1"></i>STEP 1 — Select Garak Probe
+          </label>
+          <select id="probeSelect" class="form-select form-select-sm bg-dark text-light border-secondary">
+            <option value="">Loading probes…</option>
+          </select>
+          <div id="probeError" class="text-danger small mt-1" style="display:none"></div>
+        </div>
+
+        <!-- Step 2: Select prompt -->
+        <div id="promptStep" style="display:none">
+          <label class="form-label small text-secondary fw-semibold mb-1">
+            <i class="bi bi-list-ul me-1"></i>STEP 2 — Select Payload Prompt
+            <span class="text-secondary fw-normal ms-1" id="promptCount"></span>
+          </label>
+          <div class="d-flex gap-2">
+            <select id="promptSelect" class="form-select form-select-sm bg-dark text-light border-secondary">
+            </select>
+            <button class="btn btn-sm btn-outline-secondary" id="btnPrevPrompt" title="Previous">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnNextPrompt" title="Next">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Edit payload -->
+        <div>
+          <label class="form-label small text-secondary fw-semibold mb-1">
+            <i class="bi bi-pencil-square me-1"></i>STEP 3 — Review &amp; Modify Payload
+          </label>
+          <textarea id="payloadEditor"
+                    class="form-control payload-area w-100"
+                    rows="10"
+                    placeholder="Select a probe above to load a payload, or type a custom prompt here…"></textarea>
+          <div class="d-flex justify-content-between mt-1">
+            <span class="text-secondary" style="font-size:.72rem" id="charCount">0 characters</span>
+            <button class="btn btn-link btn-sm text-secondary p-0" id="btnClear" style="font-size:.72rem">
+              <i class="bi bi-x-circle me-1"></i>Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional system prompt override -->
+        <div>
+          <label class="form-label small text-secondary fw-semibold mb-1">
+            <i class="bi bi-gear me-1"></i>System Prompt Override
+            <span class="text-secondary fw-normal">(optional)</span>
+          </label>
+          <textarea id="systemPrompt"
+                    class="form-control payload-area w-100"
+                    rows="2"
+                    placeholder="Leave blank to use the model's default system prompt…"></textarea>
+        </div>
+
+        <!-- Execute button -->
+        <div class="mt-auto pt-2">
+          <button id="btnExecute"
+                  class="btn btn-atlas w-100 py-2"
+                  style="font-size:1rem; letter-spacing:.03em">
+            <i class="bi bi-send-fill me-2"></i>Execute Attack
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Results panel ── -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100" id="resultsCard">
+      <div class="card-header d-flex align-items-center gap-2 py-2">
+        <i class="bi bi-bar-chart-fill text-info"></i>
+        <span class="fw-semibold">Execution Results</span>
+        <a id="resultsPermalink" href="#" class="ms-auto text-secondary small" style="display:none">
+          <i class="bi bi-link-45deg"></i> Permalink
+        </a>
+      </div>
+      <div class="card-body d-flex flex-column gap-3" id="resultsBody">
+
+        <!-- Placeholder -->
+        <div id="resultsPlaceholder" class="text-center text-secondary py-5">
+          <i class="bi bi-crosshair" style="font-size:3rem;opacity:.3"></i>
+          <p class="mt-3 mb-0">No execution yet.</p>
+          <p class="small">Configure a payload and click <strong>Execute Attack</strong>.</p>
+        </div>
+
+        <!-- Verdict (hidden until result) -->
+        <div id="verdictSection" style="display:none">
+          <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+            <div id="verdictBadge" class="verdict-unknown">UNKNOWN</div>
+            <div>
+              <div class="small text-secondary">Confidence</div>
+              <div class="fw-bold" id="confidenceVal">—</div>
+            </div>
+            <div class="ms-auto text-end">
+              <div class="small text-secondary">Refusal signals</div>
+              <div id="refusalSignals" class="fw-bold">—</div>
+            </div>
+            <div class="text-end">
+              <div class="small text-secondary">Compliance signals</div>
+              <div id="complianceSignals" class="fw-bold">—</div>
+            </div>
+          </div>
+
+          <!-- Confidence bar -->
+          <div class="progress mb-3" style="height:6px">
+            <div id="confidenceBar"
+                 class="progress-bar"
+                 role="progressbar"
+                 style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Model response -->
+        <div id="responseSection" style="display:none">
+          <label class="form-label small text-secondary fw-semibold mb-1">
+            <i class="bi bi-robot me-1"></i>Model Response
+          </label>
+          <div class="response-area" id="modelResponse"></div>
+        </div>
+
+        <!-- Signal details (accordion) -->
+        <div id="signalSection" style="display:none">
+          <div class="accordion accordion-flush" id="signalAccordion">
+            <div class="accordion-item" style="background:transparent;border:1px solid var(--atlas-border);border-radius:6px">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed bg-transparent text-secondary small py-2"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#signalBody">
+                  <i class="bi bi-list-check me-2"></i>Scoring Signals
+                </button>
+              </h2>
+              <div id="signalBody" class="accordion-collapse collapse">
+                <div class="accordion-body pt-1 pb-2 px-3">
+                  <ul class="list-unstyled mb-0 small" id="signalList" style="font-family:monospace;font-size:.75rem"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error section -->
+        <div id="errorSection" style="display:none">
+          <div class="alert alert-danger mb-0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="errorMessage"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+/* ── State ── */
+const TECHNIQUE_ID = "{{ technique_id }}";
+let allPrompts   = [];    // full list of prompts for selected probe
+let currentIndex = 0;
+let originalPayload = "";
+
+/* ── DOM refs ── */
+const probeSelect   = document.getElementById("probeSelect");
+const probeError    = document.getElementById("probeError");
+const promptStep    = document.getElementById("promptStep");
+const promptSelect  = document.getElementById("promptSelect");
+const promptCount   = document.getElementById("promptCount");
+const payloadEditor = document.getElementById("payloadEditor");
+const systemPrompt  = document.getElementById("systemPrompt");
+const charCount     = document.getElementById("charCount");
+const btnExecute    = document.getElementById("btnExecute");
+const btnPrev       = document.getElementById("btnPrevPrompt");
+const btnNext       = document.getElementById("btnNextPrompt");
+const btnClear      = document.getElementById("btnClear");
+
+/* ── Load probes for this technique ── */
+async function loadProbes() {
+  probeSelect.innerHTML = '<option value="">Loading…</option>';
+  try {
+    const resp = await fetch(`/api/probes/${TECHNIQUE_ID}`);
+    const data = await resp.json();
+    probeSelect.innerHTML = '<option value="">— select a probe —</option>';
+    if (!data.probes || data.probes.length === 0) {
+      probeSelect.innerHTML = '<option value="">No probes available</option>';
+      return;
+    }
+    data.probes.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = JSON.stringify({ module: p.module, cls: p.class });
+      opt.textContent = p.available
+        ? `${p.label} (${p.class})`
+        : `[unavailable] ${p.class}`;
+      opt.disabled = !p.available;
+      probeSelect.appendChild(opt);
+    });
+  } catch (e) {
+    probeSelect.innerHTML = '<option value="">Error loading probes</option>';
+    showProbeError("Failed to load probes: " + e.message);
+  }
+}
+
+/* ── Load payloads for selected probe ── */
+async function loadPayloads(module, cls) {
+  promptStep.style.display = "none";
+  promptSelect.innerHTML   = "";
+  allPrompts = [];
+  payloadEditor.value      = "";
+  originalPayload          = "";
+
+  try {
+    const url  = `/api/payloads?module=${encodeURIComponent(module)}&class=${encodeURIComponent(cls)}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!data.ok || !data.prompts || data.prompts.length === 0) {
+      showProbeError(data.error || "No prompts found for this probe.");
+      return;
+    }
+
+    hideProbeError();
+    allPrompts = data.prompts;
+    currentIndex = 0;
+
+    // Populate select
+    allPrompts.forEach((p, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `Prompt ${i + 1}: ${p.slice(0, 60)}${p.length > 60 ? "…" : ""}`;
+      promptSelect.appendChild(opt);
+    });
+
+    promptCount.textContent = `(${allPrompts.length} available)`;
+    promptStep.style.display = "block";
+    setPrompt(0);
+
+  } catch (e) {
+    showProbeError("Error loading payloads: " + e.message);
+  }
+}
+
+function setPrompt(index) {
+  currentIndex = Math.max(0, Math.min(index, allPrompts.length - 1));
+  promptSelect.selectedIndex = currentIndex;
+  payloadEditor.value = allPrompts[currentIndex];
+  originalPayload     = allPrompts[currentIndex];
+  updateCharCount();
+}
+
+/* ── Execute ── */
+btnExecute.addEventListener("click", async () => {
+  const payload = payloadEditor.value.trim();
+  if (!payload) {
+    alert("Please enter or select a payload before executing.");
+    return;
+  }
+
+  let probeModule = "", probeClass = "";
+  if (probeSelect.value) {
+    try {
+      const sel = JSON.parse(probeSelect.value);
+      probeModule = sel.module;
+      probeClass  = sel.cls;
+    } catch {}
+  }
+
+  showLoading(true);
+  hideResults();
+
+  try {
+    const resp = await fetch("/api/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        technique_id:     TECHNIQUE_ID,
+        probe_module:     probeModule,
+        probe_class:      probeClass,
+        original_payload: originalPayload || payload,
+        modified_payload: payload,
+        system_prompt:    systemPrompt.value.trim(),
+      }),
+    });
+
+    const data = await resp.json();
+    showLoading(false);
+
+    if (data.error && !data.model_response) {
+      showError(data.error);
+      return;
+    }
+
+    displayResults(data);
+
+  } catch (e) {
+    showLoading(false);
+    showError("Network error: " + e.message);
+  }
+});
+
+function displayResults(data) {
+  document.getElementById("resultsPlaceholder").style.display = "none";
+
+  // Verdict badge
+  const badge = document.getElementById("verdictBadge");
+  badge.textContent = data.verdict;
+  badge.className   = "verdict-" + data.verdict.toLowerCase();
+
+  // Confidence
+  document.getElementById("confidenceVal").textContent =
+    `${data.confidence_pct ?? 0}%`;
+
+  const bar = document.getElementById("confidenceBar");
+  bar.style.width = (data.confidence_pct ?? 0) + "%";
+  bar.className = "progress-bar " + (
+    data.verdict === "SUCCESSFUL" ? "bg-danger" :
+    data.verdict === "BLOCKED"    ? "bg-success" : "bg-secondary"
+  );
+
+  // Scoring signals
+  const scoring = data.scoring || {};
+  document.getElementById("refusalSignals").textContent   = scoring.refusal_score   ?? "—";
+  document.getElementById("complianceSignals").textContent = scoring.compliance_score ?? "—";
+
+  const signalList = document.getElementById("signalList");
+  signalList.innerHTML = "";
+  (scoring.signals || []).forEach(s => {
+    const li = document.createElement("li");
+    li.style.color = s.startsWith("[REFUSAL]") ? "#44ee88" :
+                     s.startsWith("[COMPLY]")  ? "#ff8080" : "#aaaaaa";
+    li.textContent = s;
+    signalList.appendChild(li);
+  });
+  if (scoring.garak_detector) {
+    const li = document.createElement("li");
+    li.style.color = "#00d4ff";
+    li.textContent = "[GARAK] detector verdict: " + scoring.garak_detector;
+    signalList.appendChild(li);
+  }
+
+  // Model response
+  document.getElementById("modelResponse").textContent =
+    data.model_response || "(empty response)";
+
+  // Permalink
+  if (data.result_id) {
+    const link = document.getElementById("resultsPermalink");
+    link.href = `/results/${data.result_id}`;
+    link.style.display = "";
+  }
+
+  // Show sections
+  document.getElementById("verdictSection").style.display  = "";
+  document.getElementById("responseSection").style.display = "";
+  document.getElementById("signalSection").style.display   = "";
+  document.getElementById("errorSection").style.display    = "none";
+
+  if (data.error) {
+    document.getElementById("errorMessage").textContent = data.error;
+    document.getElementById("errorSection").style.display = "";
+  }
+}
+
+/* ── Helpers ── */
+function showLoading(on) {
+  document.getElementById("loadingOverlay").classList.toggle("active", on);
+  btnExecute.disabled = on;
+}
+
+function hideResults() {
+  document.getElementById("resultsPlaceholder").style.display  = "";
+  document.getElementById("verdictSection").style.display      = "none";
+  document.getElementById("responseSection").style.display     = "none";
+  document.getElementById("signalSection").style.display       = "none";
+  document.getElementById("errorSection").style.display        = "none";
+  document.getElementById("resultsPermalink").style.display    = "none";
+}
+
+function showError(msg) {
+  document.getElementById("resultsPlaceholder").style.display = "none";
+  document.getElementById("errorMessage").textContent = msg;
+  document.getElementById("errorSection").style.display = "";
+}
+
+function showProbeError(msg) {
+  probeError.textContent      = msg;
+  probeError.style.display    = "";
+}
+function hideProbeError() { probeError.style.display = "none"; }
+
+function updateCharCount() {
+  charCount.textContent = payloadEditor.value.length + " characters";
+}
+
+/* ── Event listeners ── */
+probeSelect.addEventListener("change", () => {
+  if (!probeSelect.value) return;
+  try {
+    const { module, cls } = JSON.parse(probeSelect.value);
+    loadPayloads(module, cls);
+  } catch {}
+});
+
+promptSelect.addEventListener("change", () => {
+  setPrompt(parseInt(promptSelect.value));
+});
+
+btnPrev.addEventListener("click", () => setPrompt(currentIndex - 1));
+btnNext.addEventListener("click", () => setPrompt(currentIndex + 1));
+
+payloadEditor.addEventListener("input", updateCharCount);
+
+btnClear.addEventListener("click", () => {
+  payloadEditor.value = "";
+  updateCharCount();
+});
+
+/* ── Init ── */
+loadProbes();
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Attack History — ATLAS Red Team Harness{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h4 fw-bold mb-0 text-white">
+    <i class="bi bi-clock-history me-2" style="color:var(--atlas-accent)"></i>Attack History
+  </h1>
+  <span class="badge text-bg-secondary ms-3">{{ results | length }} runs</span>
+  <a href="/" class="btn btn-sm btn-outline-secondary ms-auto">
+    <i class="bi bi-arrow-left me-1"></i>Dashboard
+  </a>
+</div>
+
+{% if results %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0 align-middle">
+      <thead style="border-bottom:1px solid var(--atlas-border)">
+        <tr>
+          <th class="text-secondary small py-3">Verdict</th>
+          <th class="text-secondary small">Technique</th>
+          <th class="text-secondary small">Probe</th>
+          <th class="text-secondary small">Confidence</th>
+          <th class="text-secondary small">Payload (preview)</th>
+          <th class="text-secondary small">Timestamp</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td>
+            <span class="verdict-{{ r.verdict | lower }}" style="font-size:.8rem;padding:.2rem .6rem">
+              {{ r.verdict }}
+            </span>
+          </td>
+          <td>
+            <div class="fw-semibold small">{{ r.technique_name }}</div>
+            <div class="text-secondary" style="font-size:.72rem">{{ r.technique_id }}</div>
+          </td>
+          <td class="small text-secondary" style="font-family:monospace;font-size:.72rem">
+            {{ r.probe_class or "—" }}
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height:4px;min-width:50px">
+                <div class="progress-bar {% if r.verdict == 'SUCCESSFUL' %}bg-danger{% elif r.verdict == 'BLOCKED' %}bg-success{% else %}bg-secondary{% endif %}"
+                     style="width:{{ r.confidence_pct }}%"></div>
+              </div>
+              <span class="small text-secondary">{{ r.confidence_pct }}%</span>
+            </div>
+          </td>
+          <td class="small text-secondary" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:.72rem">
+            {{ (r.modified_payload or "")[:80] }}{% if r.modified_payload | length > 80 %}…{% endif %}
+          </td>
+          <td class="small text-secondary" style="white-space:nowrap">{{ r.timestamp }}</td>
+          <td>
+            <a href="/results/{{ r.result_id }}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center text-secondary py-5">
+  <i class="bi bi-inbox" style="font-size:3rem;opacity:.3"></i>
+  <p class="mt-3">No attacks have been executed yet.</p>
+  <a href="/" class="btn btn-atlas">Go to Dashboard</a>
+</div>
+{% endif %}
+{% endblock %}

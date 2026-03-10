@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}ATLAS Dashboard — Red Team Harness{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-0 fw-bold" style="color:var(--atlas-accent)">
+      <i class="bi bi-diagram-3-fill me-2"></i>MITRE ATLAS Tactics &amp; Techniques
+    </h1>
+    <p class="text-secondary mb-0 small mt-1">
+      Select a technique to load Garak probe payloads and launch red-team attacks against H2O GPTe.
+    </p>
+  </div>
+  <div class="ms-auto text-end">
+    <span class="badge text-bg-secondary">
+      {{ taxonomy | length }} tactics &nbsp;/&nbsp;
+      {{ taxonomy.values() | map(attribute='techniques') | map('length') | sum }} techniques
+    </span>
+  </div>
+</div>
+
+<!-- Stats bar -->
+<div class="row g-3 mb-4">
+  {% set severity_counts = namespace(critical=0, high=0, medium=0, low=0) %}
+  {% for tactic in taxonomy.values() %}
+    {% for tech in tactic.techniques.values() %}
+      {% if tech.severity == 'critical' %}{% set severity_counts.critical = severity_counts.critical + 1 %}
+      {% elif tech.severity == 'high' %}{% set severity_counts.high = severity_counts.high + 1 %}
+      {% elif tech.severity == 'medium' %}{% set severity_counts.medium = severity_counts.medium + 1 %}
+      {% else %}{% set severity_counts.low = severity_counts.low + 1 %}{% endif %}
+    {% endfor %}
+  {% endfor %}
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-2">
+      <div class="fw-bold" style="color:#ff4444;font-size:1.5rem">{{ severity_counts.critical }}</div>
+      <div class="text-secondary small">Critical</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-2">
+      <div class="fw-bold" style="color:#ff8800;font-size:1.5rem">{{ severity_counts.high }}</div>
+      <div class="text-secondary small">High</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-2">
+      <div class="fw-bold" style="color:#cccc00;font-size:1.5rem">{{ severity_counts.medium }}</div>
+      <div class="text-secondary small">Medium</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center py-2">
+      <div class="fw-bold" style="color:#00aa00;font-size:1.5rem">{{ severity_counts.low }}</div>
+      <div class="text-secondary small">Low</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tactic / Technique grid -->
+<div class="row g-4">
+  {% for tactic_id, tactic in taxonomy.items() %}
+  <div class="col-12 col-xl-6">
+    <div class="card tactic-card h-100">
+      <!-- Tactic header -->
+      <div class="card-header d-flex align-items-center gap-3 py-3">
+        <i class="{{ tactic.icon }} tactic-icon"></i>
+        <div>
+          <div class="fw-bold text-white" style="font-size:1.05rem">{{ tactic.name }}</div>
+          <div class="text-secondary" style="font-size:0.75rem">{{ tactic_id }}</div>
+        </div>
+      </div>
+
+      <!-- Tactic description -->
+      <div class="px-3 pt-2 pb-1">
+        <p class="text-secondary small mb-0">{{ tactic.description }}</p>
+      </div>
+
+      <!-- Technique list -->
+      <div class="card-body pt-2">
+        <ul class="list-unstyled mb-0">
+          {% for tech_id, tech in tactic.techniques.items() %}
+          <li class="mb-1">
+            <a href="/technique/{{ tech_id }}" class="technique-link">
+              <!-- Severity indicator dot -->
+              <span class="rounded-circle d-inline-block flex-shrink-0"
+                    style="width:8px;height:8px;background:
+                    {% if tech.severity == 'critical' %}#ff4444
+                    {% elif tech.severity == 'high' %}#ff8800
+                    {% elif tech.severity == 'medium' %}#cccc00
+                    {% else %}#00aa00{% endif %}">
+              </span>
+
+              <div class="flex-grow-1">
+                <span class="fw-semibold">{{ tech.name }}</span>
+                <span class="text-secondary ms-2" style="font-size:0.72rem">{{ tech_id }}</span>
+              </div>
+
+              <!-- Severity badge -->
+              <span class="badge badge-{{ tech.severity }} ms-auto flex-shrink-0">
+                {{ tech.severity | capitalize }}
+              </span>
+
+              <!-- Probe count -->
+              <span class="text-secondary small flex-shrink-0" style="font-size:0.72rem">
+                {{ tech.probes | length }} probe{% if tech.probes | length != 1 %}s{% endif %}
+              </span>
+
+              <i class="bi bi-chevron-right text-secondary flex-shrink-0" style="font-size:.75rem"></i>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Legend -->
+<div class="mt-4 d-flex flex-wrap gap-3 align-items-center text-secondary small">
+  <span class="fw-semibold text-white">Severity:</span>
+  <span><span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#ff4444"></span>Critical</span>
+  <span><span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#ff8800"></span>High</span>
+  <span><span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#cccc00"></span>Medium</span>
+  <span><span class="rounded-circle d-inline-block me-1" style="width:8px;height:8px;background:#00aa00"></span>Low</span>
+</div>
+{% endblock %}

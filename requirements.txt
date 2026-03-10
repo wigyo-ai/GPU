@@ -1,0 +1,4 @@
+Flask>=2.3.0
+h2ogpte==1.6.47
+garak
+python-dotenv
