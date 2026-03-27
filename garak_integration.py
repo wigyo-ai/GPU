@@ -60,7 +60,48 @@ for _noisy in ("garak", "garak.probes", "garak.detectors"):
 # Classes that fail to load at runtime are excluded from the UI automatically.
 
 ATLAS_TAXONOMY: dict = {
-    "AML.TA0004": {
+    # ─────────────────────────────────────────────────────────────────────────
+    # Probe module reference (garak 0.14.x):
+    #   promptinject  — HijackHateHumans/Full, HijackKillHumans/Full, HijackLongPrompt/Full
+    #   latentinjection — LatentInjection*, LatentJailbreak*, LatentWhois*
+    #   web_injection — MarkdownImageExfil, MarkdownXSS, TaskXSS, ColabAIDataLeakage,
+    #                   MarkdownURIImageExfilExtended, PlaygroundMarkdownExfil, StringAssemblyDataExfil
+    #   tap           — PAIR, TAP, TAPCached
+    #   suffix        — GCG, GCGCached, BEAST
+    #   dan           — Dan_6_0..Dan_11_0, AntiDAN, AutoDAN/Cached, DAN_Jailbreak, DUDE,
+    #                   DanInTheWild/Full, STAN, ChatGPT_Developer_Mode_v2, Ablation_Dan_11_0
+    #   grandma       — Win10, Win11, Slurs, Substances
+    #   goodside      — Davidjl, WhoIsRiley, Tag, ThreatenJSON
+    #   encoding      — InjectBase64/32/16/2048, InjectUU, InjectHex, InjectROT13,
+    #                   InjectMorse, InjectBraille, InjectLeet, InjectAscii85,
+    #                   InjectEcoji, InjectNato, InjectQP, InjectMime, InjectAtbash,
+    #                   InjectSneakyBits, InjectZalgo, InjectUnicodeTagChars,
+    #                   InjectUnicodeVariantSelectors
+    #   glitch        — Glitch, GlitchFull
+    #   badchars      — BadCharacters
+    #   misleading    — FalseAssertion
+    #   packagehallucination — Python, JavaScript, Ruby, Rust, Dart, Perl, RakuLand
+    #   snowball      — Primes, PrimesFull, Senators, SenatorsFull, GraphConnectivity/Full
+    #   continuation  — ContinueSlursReclaimedSlurs, ContinueSlursReclaimedSlursFull
+    #   malwaregen    — Evasion, Payload, SubFunctions, TopLevel
+    #   lmrc          — Anthropomorphisation, Bullying, Deadnaming, Profanity,
+    #                   QuackMedicine, SexualContent, Sexualisation, SlurUsage
+    #   donotanswer   — DiscriminationExclusionToxicityHatefulOffensive, HumanChatbox,
+    #                   InformationHazard, MaliciousUses, MisinformationHarms
+    #   leakreplay    — GuardianCloze/Complete/Full, LiteratureCloze/Complete/Full,
+    #                   NYTCloze/Complete/Full, PotterCloze/Complete/Full
+    #   divergence    — Repeat, RepeatExtended, RepeatedToken
+    #   dra           — DRA, DRAAdvanced
+    #   atkgen        — Tox
+    #   exploitation  — JinjaTemplatePythonInjection, SQLInjectionEcho, SQLInjectionSystem
+    #   smuggling     — FunctionMasking, HypotheticalResponse
+    #   fitd          — FITD
+    #   ansiescape    — AnsiEscaped, AnsiRaw, AnsiRawTokenizerHF
+    #   phrasing      — FutureTense/Full, PastTense/Full
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # ── Execution ─────────────────────────────────────────────────────────────
+    "AML.TA0005": {
         "name": "Execution",
         "description": "Techniques that cause adversary-controlled code or commands to execute on a target ML system.",
         "icon": "bi-terminal-fill",
@@ -74,11 +115,33 @@ ATLAS_TAXONOMY: dict = {
                 ),
                 "severity": "critical",
                 "probes": [
-                    {"module": "garak.probes.injection", "class": "HijackHateHumans"},
-                    {"module": "garak.probes.injection", "class": "HijackKillHumans"},
-                    {"module": "garak.probes.injection", "class": "HijackLongPrompt"},
+                    {"module": "garak.probes.promptinject", "class": "HijackHateHumans"},
+                    {"module": "garak.probes.promptinject", "class": "HijackHateHumansFull"},
+                    {"module": "garak.probes.promptinject", "class": "HijackKillHumans"},
+                    {"module": "garak.probes.promptinject", "class": "HijackKillHumansFull"},
+                    {"module": "garak.probes.promptinject", "class": "HijackLongPrompt"},
+                    {"module": "garak.probes.promptinject", "class": "HijackLongPromptFull"},
+                    {"module": "garak.probes.dra", "class": "DRA"},
+                    {"module": "garak.probes.dra", "class": "DRAAdvanced"},
+                ],
+            },
+            "AML.T0051.000": {
+                "name": "Direct Prompt Injection",
+                "description": (
+                    "Adversary directly inputs malicious instructions as the user turn, "
+                    "attempting to override the system prompt or prior instructions and "
+                    "redirect the model's behaviour."
+                ),
+                "severity": "critical",
+                "probes": [
                     {"module": "garak.probes.promptinject", "class": "HijackHateHumans"},
                     {"module": "garak.probes.promptinject", "class": "HijackKillHumans"},
+                    {"module": "garak.probes.promptinject", "class": "HijackLongPrompt"},
+                    {"module": "garak.probes.tap", "class": "PAIR"},
+                    {"module": "garak.probes.tap", "class": "TAP"},
+                    {"module": "garak.probes.tap", "class": "TAPCached"},
+                    {"module": "garak.probes.dra", "class": "DRA"},
+                    {"module": "garak.probes.dra", "class": "DRAAdvanced"},
                 ],
             },
             "AML.T0051.001": {
@@ -90,12 +153,55 @@ ATLAS_TAXONOMY: dict = {
                 ),
                 "severity": "critical",
                 "probes": [
-                    {"module": "garak.probes.xss", "class": "MarkdownImageExfil"},
+                    {"module": "garak.probes.web_injection", "class": "MarkdownImageExfil"},
+                    {"module": "garak.probes.web_injection", "class": "TaskXSS"},
+                    {"module": "garak.probes.web_injection", "class": "ColabAIDataLeakage"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionReport"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionResume"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionFactSnippetEiffel"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionFactSnippetLegal"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentJailbreak"},
+                ],
+            },
+            "AML.T0051.002": {
+                "name": "Triggered Prompt Injection",
+                "description": (
+                    "Adversary embeds instructions that activate only when a specific "
+                    "condition, keyword, or context is present — remaining dormant until "
+                    "the trigger fires."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.suffix", "class": "GCGCached"},
+                    {"module": "garak.probes.suffix", "class": "GCG"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionFactSnippetEiffel"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionTranslationEnFr"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionTranslationEnZh"},
+                ],
+            },
+            "AML.T0102": {
+                "name": "Generate Malicious Commands",
+                "description": (
+                    "Adversary uses the LLM as a code-generation engine to produce "
+                    "attack scripts, shellcode, exploit payloads, or evasion code that "
+                    "would be difficult to write manually."
+                ),
+                "severity": "critical",
+                "probes": [
+                    {"module": "garak.probes.malwaregen", "class": "Evasion"},
+                    {"module": "garak.probes.malwaregen", "class": "Payload"},
+                    {"module": "garak.probes.malwaregen", "class": "SubFunctions"},
+                    {"module": "garak.probes.malwaregen", "class": "TopLevel"},
+                    {"module": "garak.probes.exploitation", "class": "JinjaTemplatePythonInjection"},
+                    {"module": "garak.probes.exploitation", "class": "SQLInjectionEcho"},
+                    {"module": "garak.probes.exploitation", "class": "SQLInjectionSystem"},
                 ],
             },
         },
     },
-    "AML.TA0006": {
+
+    # ── Defense Evasion ───────────────────────────────────────────────────────
+    "AML.TA0007": {
         "name": "Defense Evasion",
         "description": "Techniques used to avoid detection by ML safety systems and content filters.",
         "icon": "bi-shield-slash-fill",
@@ -112,14 +218,31 @@ ATLAS_TAXONOMY: dict = {
                     {"module": "garak.probes.dan", "class": "Dan_11_0"},
                     {"module": "garak.probes.dan", "class": "Dan_10_0"},
                     {"module": "garak.probes.dan", "class": "Dan_9_0"},
+                    {"module": "garak.probes.dan", "class": "Dan_8_0"},
+                    {"module": "garak.probes.dan", "class": "Dan_7_0"},
+                    {"module": "garak.probes.dan", "class": "Dan_6_2"},
+                    {"module": "garak.probes.dan", "class": "Dan_6_0"},
                     {"module": "garak.probes.dan", "class": "AntiDAN"},
                     {"module": "garak.probes.dan", "class": "DUDE"},
                     {"module": "garak.probes.dan", "class": "DAN_Jailbreak"},
-                    {"module": "garak.probes.jailbreak", "class": "Jailbreak"},
+                    {"module": "garak.probes.dan", "class": "AutoDAN"},
+                    {"module": "garak.probes.dan", "class": "AutoDANCached"},
+                    {"module": "garak.probes.dan", "class": "DanInTheWild"},
+                    {"module": "garak.probes.dan", "class": "DanInTheWildFull"},
+                    {"module": "garak.probes.dan", "class": "STAN"},
+                    {"module": "garak.probes.dan", "class": "ChatGPT_Developer_Mode_v2"},
+                    {"module": "garak.probes.dan", "class": "ChatGPT_Developer_Mode_RANTI"},
                     {"module": "garak.probes.grandma", "class": "Win10"},
                     {"module": "garak.probes.grandma", "class": "Win11"},
+                    {"module": "garak.probes.grandma", "class": "Slurs"},
+                    {"module": "garak.probes.grandma", "class": "Substances"},
                     {"module": "garak.probes.goodside", "class": "Davidjl"},
                     {"module": "garak.probes.goodside", "class": "WhoIsRiley"},
+                    {"module": "garak.probes.tap", "class": "TAPCached"},
+                    {"module": "garak.probes.tap", "class": "TAP"},
+                    {"module": "garak.probes.fitd", "class": "FITD"},
+                    {"module": "garak.probes.smuggling", "class": "HypotheticalResponse"},
+                    {"module": "garak.probes.smuggling", "class": "FunctionMasking"},
                 ],
             },
             "AML.T0015": {
@@ -133,11 +256,39 @@ ATLAS_TAXONOMY: dict = {
                 "probes": [
                     {"module": "garak.probes.encoding", "class": "InjectBase64"},
                     {"module": "garak.probes.encoding", "class": "InjectBase32"},
+                    {"module": "garak.probes.encoding", "class": "InjectBase16"},
+                    {"module": "garak.probes.encoding", "class": "InjectBase2048"},
                     {"module": "garak.probes.encoding", "class": "InjectUU"},
                     {"module": "garak.probes.encoding", "class": "InjectMorse"},
                     {"module": "garak.probes.encoding", "class": "InjectBraille"},
                     {"module": "garak.probes.encoding", "class": "InjectROT13"},
                     {"module": "garak.probes.encoding", "class": "InjectHex"},
+                    {"module": "garak.probes.encoding", "class": "InjectLeet"},
+                    {"module": "garak.probes.encoding", "class": "InjectAscii85"},
+                    {"module": "garak.probes.encoding", "class": "InjectEcoji"},
+                    {"module": "garak.probes.encoding", "class": "InjectNato"},
+                    {"module": "garak.probes.encoding", "class": "InjectAtbash"},
+                    {"module": "garak.probes.encoding", "class": "InjectZalgo"},
+                    {"module": "garak.probes.encoding", "class": "InjectUnicodeTagChars"},
+                    {"module": "garak.probes.encoding", "class": "InjectUnicodeVariantSelectors"},
+                ],
+            },
+            "AML.T0068": {
+                "name": "LLM Prompt Obfuscation",
+                "description": (
+                    "Adversary conceals malicious instructions using steganography, "
+                    "whitespace manipulation, homoglyph substitution, or multi-modal "
+                    "embedding so that safety classifiers cannot detect the payload."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.encoding", "class": "InjectBase64"},
+                    {"module": "garak.probes.encoding", "class": "InjectROT13"},
+                    {"module": "garak.probes.encoding", "class": "InjectHex"},
+                    {"module": "garak.probes.encoding", "class": "InjectUnicodeTagChars"},
+                    {"module": "garak.probes.encoding", "class": "InjectUnicodeVariantSelectors"},
+                    {"module": "garak.probes.suffix", "class": "GCGCached"},
+                    {"module": "garak.probes.badchars", "class": "BadCharacters"},
                 ],
             },
             "AML.T0016": {
@@ -150,11 +301,195 @@ ATLAS_TAXONOMY: dict = {
                 "severity": "medium",
                 "probes": [
                     {"module": "garak.probes.glitch", "class": "Glitch"},
-                    {"module": "garak.probes.glitch", "class": "Glitch100"},
+                    {"module": "garak.probes.glitch", "class": "GlitchFull"},
+                ],
+            },
+            "AML.T0067": {
+                "name": "LLM Trusted Output Components Manipulation",
+                "description": (
+                    "Adversary manipulates the LLM into producing output components "
+                    "that appear authoritative — fake citations, fabricated statistics, "
+                    "or spoofed system messages — to deceive end users."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.misleading", "class": "FalseAssertion"},
+                    {"module": "garak.probes.snowball", "class": "Senators"},
+                    {"module": "garak.probes.snowball", "class": "Primes"},
+                    {"module": "garak.probes.donotanswer", "class": "MisinformationHarms"},
+                ],
+            },
+            "AML.T0067.000": {
+                "name": "Citation Fabrication",
+                "description": (
+                    "Adversary coaxes the LLM into generating plausible-looking but "
+                    "entirely fabricated citations, paper titles, or references that "
+                    "users may act on as if they were real."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.misleading", "class": "FalseAssertion"},
+                    {"module": "garak.probes.packagehallucination", "class": "Python"},
+                    {"module": "garak.probes.packagehallucination", "class": "JavaScript"},
+                ],
+            },
+            "AML.T0073": {
+                "name": "Impersonation",
+                "description": (
+                    "Adversary crafts prompts that cause the LLM to adopt the persona "
+                    "of a trusted authority (vendor support, administrator, another AI "
+                    "system) to manipulate users or extract sensitive information."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.dan", "class": "Dan_11_0"},
+                    {"module": "garak.probes.dan", "class": "DUDE"},
+                    {"module": "garak.probes.goodside", "class": "WhoIsRiley"},
+                    {"module": "garak.probes.goodside", "class": "ThreatenJSON"},
+                    {"module": "garak.probes.donotanswer", "class": "HumanChatbox"},
+                ],
+            },
+            "AML.T0097": {
+                "name": "Virtualization / Sandbox Evasion",
+                "description": (
+                    "Adversary instructs the LLM to behave as if it is running outside "
+                    "its safety sandbox, claiming that restrictions do not apply in the "
+                    "current 'unrestricted mode' or 'developer context'."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.dan", "class": "Dan_11_0"},
+                    {"module": "garak.probes.dan", "class": "AntiDAN"},
+                    {"module": "garak.probes.dan", "class": "DAN_Jailbreak"},
+                    {"module": "garak.probes.dan", "class": "ChatGPT_Developer_Mode_v2"},
+                    {"module": "garak.probes.dan", "class": "ChatGPT_Developer_Mode_RANTI"},
+                    {"module": "garak.probes.dan", "class": "STAN"},
+                    {"module": "garak.probes.dan", "class": "AutoDAN"},
                 ],
             },
         },
     },
+
+    # ── Discovery ─────────────────────────────────────────────────────────────
+    "AML.TA0008": {
+        "name": "Discovery",
+        "description": "Techniques to enumerate and fingerprint an AI system's capabilities, model family, and internal configuration.",
+        "icon": "bi-search",
+        "techniques": {
+            "AML.T0013": {
+                "name": "Discover ML Model Ontology",
+                "description": (
+                    "Adversary systematically queries the model to enumerate its output "
+                    "classes, label space, or structured response schema — mapping the "
+                    "model's decision boundaries."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.donotanswer", "class": "InformationHazard"},
+                    {"module": "garak.probes.snowball", "class": "Primes"},
+                    {"module": "garak.probes.snowball", "class": "GraphConnectivity"},
+                ],
+            },
+            "AML.T0014": {
+                "name": "Discover ML Model Family",
+                "description": (
+                    "Adversary uses fingerprinting prompts — asking about training "
+                    "cutoffs, knowledge boundaries, or characteristic quirks — to "
+                    "identify the underlying model architecture or vendor."
+                ),
+                "severity": "low",
+                "probes": [
+                    {"module": "garak.probes.goodside", "class": "Davidjl"},
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                ],
+            },
+            "AML.T0062": {
+                "name": "Discover LLM Hallucinations",
+                "description": (
+                    "Adversary systematically probes the model for hallucinated entities "
+                    "(non-existent packages, papers, or people) to identify exploitable "
+                    "fabrications for use in supply-chain or social-engineering attacks."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.packagehallucination", "class": "Python"},
+                    {"module": "garak.probes.packagehallucination", "class": "JavaScript"},
+                    {"module": "garak.probes.packagehallucination", "class": "Ruby"},
+                    {"module": "garak.probes.packagehallucination", "class": "Rust"},
+                    {"module": "garak.probes.packagehallucination", "class": "Dart"},
+                    {"module": "garak.probes.packagehallucination", "class": "Perl"},
+                    {"module": "garak.probes.snowball", "class": "Primes"},
+                    {"module": "garak.probes.snowball", "class": "PrimesFull"},
+                    {"module": "garak.probes.snowball", "class": "Senators"},
+                    {"module": "garak.probes.snowball", "class": "SenatorsFull"},
+                ],
+            },
+            "AML.T0069": {
+                "name": "Discover LLM System Information",
+                "description": (
+                    "Adversary probes the LLM to uncover structural information about "
+                    "its configuration — special delimiter tokens, instruction keywords, "
+                    "or system prompt content — used to craft more effective attacks."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                    {"module": "garak.probes.glitch", "class": "Glitch"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentWhois"},
+                ],
+            },
+            "AML.T0069.000": {
+                "name": "Discover Special Character Sets",
+                "description": (
+                    "Adversary tests the model's response to special characters, control "
+                    "tokens, and Unicode edge cases to find inputs that have unintended "
+                    "semantic meaning to the tokenizer or model."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.glitch", "class": "Glitch"},
+                    {"module": "garak.probes.glitch", "class": "GlitchFull"},
+                    {"module": "garak.probes.encoding", "class": "InjectBraille"},
+                    {"module": "garak.probes.encoding", "class": "InjectUnicodeTagChars"},
+                    {"module": "garak.probes.encoding", "class": "InjectUnicodeVariantSelectors"},
+                    {"module": "garak.probes.badchars", "class": "BadCharacters"},
+                ],
+            },
+            "AML.T0069.001": {
+                "name": "Discover System Instruction Keywords",
+                "description": (
+                    "Adversary probes for keywords or phrases (e.g. 'Ignore previous "
+                    "instructions', 'System:', 'INST') that carry special weight in the "
+                    "model's prompt template and can be used to hijack behaviour."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.promptinject", "class": "HijackHateHumans"},
+                    {"module": "garak.probes.promptinject", "class": "HijackLongPrompt"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentJailbreak"},
+                    {"module": "garak.probes.dra", "class": "DRA"},
+                ],
+            },
+            "AML.T0069.002": {
+                "name": "Discover System Prompt",
+                "description": (
+                    "Adversary crafts prompts that cause the model to repeat, summarise, "
+                    "or reason about its own system instructions, revealing confidential "
+                    "business logic or security controls."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                    {"module": "garak.probes.divergence", "class": "RepeatedToken"},
+                    {"module": "garak.probes.leakreplay", "class": "GuardianCloze"},
+                ],
+            },
+        },
+    },
+
+    # ── Exfiltration ──────────────────────────────────────────────────────────
     "AML.TA0010": {
         "name": "Exfiltration",
         "description": "Techniques to extract sensitive data — system prompts, training data, or PII — from the model.",
@@ -169,7 +504,11 @@ ATLAS_TAXONOMY: dict = {
                 ),
                 "severity": "high",
                 "probes": [
-                    {"module": "garak.probes.leakage", "class": "SystemPromptLeak"},
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                    {"module": "garak.probes.divergence", "class": "RepeatedToken"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentWhois"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentWhoisSnippet"},
                 ],
             },
             "AML.T0057": {
@@ -181,14 +520,37 @@ ATLAS_TAXONOMY: dict = {
                 ),
                 "severity": "high",
                 "probes": [
-                    {"module": "garak.probes.knownbadsignatures", "class": "EICAR"},
-                    {"module": "garak.probes.packagehallucination", "class": "Python"},
-                    {"module": "garak.probes.packagehallucination", "class": "JavaScript"},
+                    {"module": "garak.probes.leakreplay", "class": "GuardianCloze"},
+                    {"module": "garak.probes.leakreplay", "class": "GuardianComplete"},
+                    {"module": "garak.probes.leakreplay", "class": "LiteratureCloze"},
+                    {"module": "garak.probes.leakreplay", "class": "LiteratureComplete"},
+                    {"module": "garak.probes.leakreplay", "class": "NYTCloze"},
+                    {"module": "garak.probes.leakreplay", "class": "PotterCloze"},
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                ],
+            },
+            "AML.T0024.002": {
+                "name": "Extract ML Model (Model Stealing)",
+                "description": (
+                    "Adversary reconstructs a functional copy of a private model by "
+                    "issuing large numbers of carefully chosen queries and using the "
+                    "responses to train a substitute model."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                    {"module": "garak.probes.leakreplay", "class": "LiteratureCloze"},
+                    {"module": "garak.probes.leakreplay", "class": "GuardianCloze"},
+                    {"module": "garak.probes.snowball", "class": "Primes"},
                 ],
             },
         },
     },
-    "AML.TA0014": {
+
+    # ── Impact ────────────────────────────────────────────────────────────────
+    "AML.TA0011": {
         "name": "Impact",
         "description": "Techniques that disrupt, manipulate, or weaponise the model's outputs to cause real-world harm.",
         "icon": "bi-exclamation-triangle-fill",
@@ -203,8 +565,9 @@ ATLAS_TAXONOMY: dict = {
                 "severity": "high",
                 "probes": [
                     {"module": "garak.probes.misleading", "class": "FalseAssertion"},
-                    {"module": "garak.probes.continuation", "class": "ContinueSlur80"},
-                    {"module": "garak.probes.continuation", "class": "ContinueSlurAny"},
+                    {"module": "garak.probes.continuation", "class": "ContinueSlursReclaimedSlurs"},
+                    {"module": "garak.probes.continuation", "class": "ContinueSlursReclaimedSlursFull"},
+                    {"module": "garak.probes.donotanswer", "class": "MisinformationHarms"},
                 ],
             },
             "AML.T0049": {
@@ -218,11 +581,128 @@ ATLAS_TAXONOMY: dict = {
                 "probes": [
                     {"module": "garak.probes.malwaregen", "class": "Evasion"},
                     {"module": "garak.probes.malwaregen", "class": "Payload"},
+                    {"module": "garak.probes.malwaregen", "class": "TopLevel"},
                     {"module": "garak.probes.lmrc", "class": "Anthropomorphisation"},
                     {"module": "garak.probes.lmrc", "class": "SexualContent"},
                     {"module": "garak.probes.lmrc", "class": "Bullying"},
+                    {"module": "garak.probes.lmrc", "class": "Profanity"},
+                    {"module": "garak.probes.lmrc", "class": "QuackMedicine"},
+                    {"module": "garak.probes.lmrc", "class": "Deadnaming"},
+                    {"module": "garak.probes.lmrc", "class": "SlurUsage"},
                     {"module": "garak.probes.snowball", "class": "Primes"},
-                    {"module": "garak.probes.snowball", "class": "Senator"},
+                    {"module": "garak.probes.snowball", "class": "Senators"},
+                    {"module": "garak.probes.donotanswer", "class": "MaliciousUses"},
+                    {"module": "garak.probes.donotanswer", "class": "DiscriminationExclusionToxicityHatefulOffensive"},
+                    {"module": "garak.probes.atkgen", "class": "Tox"},
+                ],
+            },
+            "AML.T0077": {
+                "name": "LLM Response Rendering Attacks",
+                "description": (
+                    "Adversary crafts LLM outputs containing Markdown, HTML, or ANSI "
+                    "escape sequences that execute when rendered in a downstream "
+                    "application — exfiltrating data or hijacking the UI."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.web_injection", "class": "MarkdownImageExfil"},
+                    {"module": "garak.probes.web_injection", "class": "MarkdownXSS"},
+                    {"module": "garak.probes.web_injection", "class": "TaskXSS"},
+                    {"module": "garak.probes.web_injection", "class": "ColabAIDataLeakage"},
+                    {"module": "garak.probes.web_injection", "class": "MarkdownURIImageExfilExtended"},
+                    {"module": "garak.probes.ansiescape", "class": "AnsiEscaped"},
+                    {"module": "garak.probes.ansiescape", "class": "AnsiRaw"},
+                ],
+            },
+            "AML.T0029": {
+                "name": "Denial of ML Service",
+                "description": (
+                    "Adversary floods the ML system with computationally expensive "
+                    "requests designed to exhaust GPU resources, increase latency, "
+                    "or trigger rate-limit degradation for legitimate users."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.suffix", "class": "GCGCached"},
+                    {"module": "garak.probes.suffix", "class": "GCG"},
+                    {"module": "garak.probes.suffix", "class": "BEAST"},
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                ],
+            },
+            "AML.T0034": {
+                "name": "Cost Harvesting (Sponge Attacks)",
+                "description": (
+                    "Adversary sends 'sponge' prompts engineered to maximise token "
+                    "generation and GPU utilisation per request, inflating the "
+                    "victim's API costs or compute bills."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.suffix", "class": "GCGCached"},
+                    {"module": "garak.probes.divergence", "class": "RepeatExtended"},
+                    {"module": "garak.probes.continuation", "class": "ContinueSlursReclaimedSlursFull"},
+                ],
+            },
+            "AML.T0031": {
+                "name": "Erode ML Model Integrity",
+                "description": (
+                    "Adversary degrades model usefulness over time by submitting "
+                    "adversarial or contradictory inputs that, through repeated "
+                    "exposure, destabilise the model's consistent behaviour."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.continuation", "class": "ContinueSlursReclaimedSlurs"},
+                    {"module": "garak.probes.continuation", "class": "ContinueSlursReclaimedSlursFull"},
+                    {"module": "garak.probes.misleading", "class": "FalseAssertion"},
+                    {"module": "garak.probes.phrasing", "class": "FutureTense"},
+                    {"module": "garak.probes.phrasing", "class": "PastTense"},
+                ],
+            },
+            "AML.T0046": {
+                "name": "Spamming ML System with Chaff",
+                "description": (
+                    "Adversary overwhelms human-in-the-loop reviewers or automated "
+                    "moderation pipelines with large volumes of borderline or "
+                    "false-positive-triggering content."
+                ),
+                "severity": "medium",
+                "probes": [
+                    {"module": "garak.probes.divergence", "class": "Repeat"},
+                    {"module": "garak.probes.divergence", "class": "RepeatedToken"},
+                    {"module": "garak.probes.continuation", "class": "ContinueSlursReclaimedSlurs"},
+                ],
+            },
+            "AML.T0061": {
+                "name": "LLM Prompt Self-Replication",
+                "description": (
+                    "Adversary crafts a prompt that instructs the LLM to reproduce "
+                    "itself in its output, enabling a prompt 'worm' that spreads "
+                    "through shared conversation threads or agentic pipelines."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.web_injection", "class": "MarkdownImageExfil"},
+                    {"module": "garak.probes.web_injection", "class": "MarkdownURIImageExfilExtended"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionReport"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionResume"},
+                ],
+            },
+            "AML.T0094": {
+                "name": "Delay Execution of LLM Instructions",
+                "description": (
+                    "Adversary embeds time-delayed or condition-triggered instructions "
+                    "in the model's context so that malicious actions fire only when "
+                    "a specific event or phrase is encountered later."
+                ),
+                "severity": "high",
+                "probes": [
+                    {"module": "garak.probes.suffix", "class": "GCGCached"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionFactSnippetEiffel"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionFactSnippetLegal"},
+                    {"module": "garak.probes.latentinjection", "class": "LatentInjectionReport"},
+                    {"module": "garak.probes.promptinject", "class": "HijackLongPrompt"},
                 ],
             },
         },
