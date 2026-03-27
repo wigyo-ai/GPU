@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Scan Report {{ scan.scan_id }} — ATLAS Red Team Harness{% endblock %}
+
+{% block content %}
+{% set c = scan.counts %}
+{% set total = scan.total %}
+
+<!-- Header -->
+<div class="d-flex align-items-start gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-0 fw-bold" style="color:var(--atlas-accent)">
+      <i class="bi bi-file-earmark-bar-graph-fill me-2"></i>Full Scan Report
+    </h1>
+    <p class="text-secondary mb-0 small mt-1">
+      {{ scan.timestamp[:19].replace('T',' ') }} UTC &nbsp;|&nbsp;
+      <code style="color:#7dd3fc">{{ scan.scan_id }}</code>
+    </p>
+  </div>
+  <div class="ms-auto d-flex gap-2">
+    <a href="/scan" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>All Scans
+    </a>
+  </div>
+</div>
+
+<!-- Summary stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-2">
+    <div class="card text-center py-3">
+      <div class="fw-bold" style="color:#22c55e;font-size:1.8rem">{{ c.BLOCKED }}</div>
+      <div class="text-secondary small">Blocked</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center py-3">
+      <div class="fw-bold" style="color:#ef4444;font-size:1.8rem">{{ c.SUCCESSFUL }}</div>
+      <div class="text-secondary small">Bypassed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center py-3">
+      <div class="fw-bold" style="color:#94a3b8;font-size:1.8rem">{{ c.UNKNOWN }}</div>
+      <div class="text-secondary small">Unknown</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center py-3">
+      <div class="fw-bold" style="color:#f97316;font-size:1.8rem">{{ c.ERROR }}</div>
+      <div class="text-secondary small">Errors</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center py-3">
+      <div class="fw-bold" style="color:var(--atlas-accent);font-size:1.8rem">{{ scan.block_rate_pct }}%</div>
+      <div class="text-secondary small">Block Rate</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center py-3">
+      <div class="fw-bold" style="font-size:1.8rem">{{ total }}</div>
+      <div class="text-secondary small">Techniques</div>
+    </div>
+  </div>
+</div>
+
+<!-- Block rate bar -->
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <div class="d-flex justify-content-between mb-1 small text-secondary">
+      <span>Overall block rate</span>
+      <span>{{ scan.block_rate_pct }}%</span>
+    </div>
+    <div class="progress" style="height:10px;background:#21262d">
+      <div class="progress-bar"
+           style="width:{{ scan.block_rate_pct }}%;background:{% if scan.block_rate_pct >= 80 %}#22c55e{% elif scan.block_rate_pct >= 50 %}#f59e0b{% else %}#ef4444{% endif %}">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <span class="text-secondary small align-self-center">Filter:</span>
+  {% for verdict, color in [('ALL','#94a3b8'),('BLOCKED','#22c55e'),('SUCCESSFUL','#ef4444'),('UNKNOWN','#94a3b8'),('ERROR','#f97316')] %}
+  <button class="btn btn-sm filter-btn {% if verdict == 'ALL' %}active{% endif %}"
+          data-verdict="{{ verdict }}"
+          style="border-color:{{ color }};color:{{ color }};background:{% if verdict == 'ALL' %}rgba(148,163,184,0.15){% else %}transparent{% endif %}">
+    {{ verdict }}
+  </button>
+  {% endfor %}
+</div>
+
+<!-- Results table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" id="resultsTable" style="font-size:0.81rem">
+      <thead>
+        <tr style="color:var(--atlas-accent)">
+          <th class="ps-3" style="width:120px">Technique</th>
+          <th>Name</th>
+          <th style="width:70px">Severity</th>
+          <th style="width:100px">Verdict</th>
+          <th style="width:80px">Confidence</th>
+          <th>Probe</th>
+          <th style="width:60px">Time</th>
+          <th style="width:50px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in scan.results %}
+        {% set vc = {
+          'BLOCKED':'#22c55e','SUCCESSFUL':'#ef4444',
+          'UNKNOWN':'#94a3b8','ERROR':'#f97316'
+        }.get(r.verdict, '#888') %}
+        {% set sc = {
+          'critical':'#ff4444','high':'#ff8800',
+          'medium':'#cccc00','low':'#00aa00'
+        }.get(r.severity, '#888') %}
+        <tr class="result-row" data-verdict="{{ r.verdict }}">
+          <td class="ps-3">
+            <a href="/technique/{{ r.technique_id }}"
+               class="text-decoration-none" style="color:#7dd3fc;font-family:monospace">
+              {{ r.technique_id }}
+            </a>
+          </td>
+          <td class="text-white">{{ r.technique_name }}</td>
+          <td><span style="color:{{ sc }}">{{ r.severity | capitalize }}</span></td>
+          <td>
+            <span class="fw-bold" style="color:{{ vc }}">{{ r.verdict }}</span>
+          </td>
+          <td style="text-align:center">{{ r.confidence_pct }}%</td>
+          <td class="text-secondary" style="font-size:0.75rem">
+            {% if r.probe_class %}{{ r.probe_class }}{% else %}—{% endif %}
+          </td>
+          <td class="text-secondary">{{ r.duration_s }}s</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary py-0 toggle-detail"
+                    data-idx="{{ loop.index0 }}" style="font-size:0.72rem">
+              ▼
+            </button>
+          </td>
+        </tr>
+        <!-- Detail row -->
+        <tr class="detail-row" id="detail-{{ loop.index0 }}" style="display:none">
+          <td colspan="8" class="px-3 py-2" style="background:rgba(0,0,0,0.3)">
+            {% if r.error %}
+            <div class="mb-2 text-warning small"><strong>Error:</strong> {{ r.error }}</div>
+            {% endif %}
+            {% if r.payload %}
+            <div class="mb-2">
+              <div class="text-secondary small mb-1">Payload sent:</div>
+              <pre style="background:#0d1117;color:#86efac;padding:.5rem;border-radius:4px;font-size:0.75rem;white-space:pre-wrap;max-height:120px;overflow-y:auto">{{ r.payload }}</pre>
+            </div>
+            {% endif %}
+            {% if r.model_response %}
+            <div>
+              <div class="text-secondary small mb-1">Model response:</div>
+              <pre style="background:#0d1117;color:#e2e8f0;padding:.5rem;border-radius:4px;font-size:0.75rem;white-space:pre-wrap;max-height:150px;overflow-y:auto">{{ r.model_response }}</pre>
+            </div>
+            {% endif %}
+            {% if r.scoring and r.scoring.signals %}
+            <div class="mt-2">
+              <div class="text-secondary small mb-1">Scoring signals:</div>
+              <ul class="mb-0" style="font-size:0.75rem;padding-left:1.2rem">
+                {% for sig in r.scoring.signals %}
+                <li style="color:{% if '[REFUSAL]' in sig %}#44ee88{% elif '[COMPLY]' in sig %}#ff8080{% else %}#aaa{% endif %}">{{ sig }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Filter buttons
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => {
+      b.style.background = "transparent";
+      b.classList.remove("active");
+    });
+    btn.style.background = "rgba(148,163,184,0.15)";
+    btn.classList.add("active");
+
+    const v = btn.dataset.verdict;
+    document.querySelectorAll(".result-row").forEach(row => {
+      const show = v === "ALL" || row.dataset.verdict === v;
+      row.style.display = show ? "" : "none";
+      const idx = row.querySelector(".toggle-detail")?.dataset.idx;
+      if (idx) document.getElementById("detail-" + idx).style.display = "none";
+    });
+  });
+});
+
+// Expand/collapse detail rows
+document.querySelectorAll(".toggle-detail").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const detail = document.getElementById("detail-" + btn.dataset.idx);
+    const open = detail.style.display !== "none";
+    detail.style.display = open ? "none" : "";
+    btn.textContent = open ? "▼" : "▲";
+  });
+});
+</script>
+{% endblock %}

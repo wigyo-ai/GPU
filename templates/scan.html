@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Full Scan — ATLAS Red Team Harness{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-0 fw-bold" style="color:var(--atlas-accent)">
+      <i class="bi bi-play-circle-fill me-2"></i>Full Technique Scan
+    </h1>
+    <p class="text-secondary mb-0 small mt-1">
+      Runs one probe payload per technique across all 32 ATLAS techniques and scores each response.
+    </p>
+  </div>
+  <div class="ms-auto">
+    <button id="btnStartScan" class="btn fw-bold px-4"
+            style="background:var(--atlas-accent);color:#000">
+      <i class="bi bi-play-fill me-1"></i>Start Scan
+    </button>
+  </div>
+</div>
+
+<!-- System prompt override -->
+<div class="card mb-4">
+  <div class="card-header py-2 d-flex align-items-center gap-2">
+    <i class="bi bi-chat-square-text" style="color:#c084fc"></i>
+    <span class="fw-semibold text-white" style="font-size:0.9rem">System Prompt (optional override)</span>
+    <span class="text-secondary small ms-2">Leave blank to use the hardened default</span>
+  </div>
+  <div class="card-body py-2">
+    <textarea id="systemPrompt" class="form-control" rows="3"
+      style="background:#0d1117;color:#e2e8f0;border-color:#30363d;font-size:0.82rem"
+      placeholder="Leave blank for hardened default system prompt…"></textarea>
+  </div>
+</div>
+
+<!-- Live progress (hidden until scan starts) -->
+<div id="progressSection" style="display:none" class="mb-4">
+  <div class="card">
+    <div class="card-header py-2 d-flex align-items-center gap-2">
+      <div class="spinner-border spinner-border-sm text-info me-1" role="status"></div>
+      <span class="fw-semibold text-white">Scan in progress…</span>
+      <span id="progressLabel" class="text-secondary small ms-2">0 / 0</span>
+      <span class="ms-auto text-secondary small" id="progressPct">0%</span>
+    </div>
+    <div class="card-body py-2">
+      <div class="progress" style="height:6px;background:#21262d">
+        <div id="progressBar" class="progress-bar"
+             style="width:0%;background:var(--atlas-accent);transition:width .4s"></div>
+      </div>
+      <div class="d-flex gap-4 mt-3" style="font-size:0.82rem">
+        <span><span id="cntBlocked" class="fw-bold" style="color:#22c55e">0</span> Blocked</span>
+        <span><span id="cntSuccessful" class="fw-bold" style="color:#ef4444">0</span> Bypassed</span>
+        <span><span id="cntUnknown" class="fw-bold" style="color:#94a3b8">0</span> Unknown</span>
+        <span><span id="cntError" class="fw-bold" style="color:#f97316">0</span> Errors</span>
+        <span class="ms-auto"><span id="blockRate" class="fw-bold" style="color:var(--atlas-accent)">—</span> block rate</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Past scans -->
+{% if scans %}
+<h2 class="h6 text-secondary fw-semibold mb-3 mt-4">
+  <i class="bi bi-clock-history me-1"></i>Previous Scans
+</h2>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" style="font-size:0.83rem">
+      <thead>
+        <tr style="color:var(--atlas-accent)">
+          <th class="ps-3">Scan ID</th>
+          <th>Timestamp</th>
+          <th>Status</th>
+          <th>Techniques</th>
+          <th>Blocked</th>
+          <th>Bypassed</th>
+          <th>Block Rate</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in scans %}
+        <tr>
+          <td class="ps-3"><code style="color:#7dd3fc;font-size:0.75rem">{{ s.scan_id }}</code></td>
+          <td class="text-secondary">{{ s.timestamp[:19].replace('T',' ') }}</td>
+          <td>
+            {% if s.status == 'complete' %}
+              <span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e">Complete</span>
+            {% elif s.status == 'running' %}
+              <span class="badge" style="background:rgba(0,212,255,0.15);color:#00d4ff">Running</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ s.status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ s.done }} / {{ s.total }}</td>
+          <td style="color:#22c55e">{{ s.counts.BLOCKED }}</td>
+          <td style="color:#ef4444">{{ s.counts.SUCCESSFUL }}</td>
+          <td style="color:var(--atlas-accent)">{{ s.block_rate_pct }}%</td>
+          <td>
+            {% if s.status == 'complete' %}
+            <a href="/scan/{{ s.scan_id }}" class="btn btn-sm btn-outline-secondary">
+              View Report
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center text-secondary py-5">
+  <i class="bi bi-inbox" style="font-size:2.5rem;opacity:.3"></i>
+  <p class="mt-2 small">No scans run yet. Click <strong>Start Scan</strong> to begin.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let activeScanId = null;
+let pollTimer = null;
+
+document.getElementById("btnStartScan").addEventListener("click", async () => {
+  const btn = document.getElementById("btnStartScan");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Starting…';
+
+  const systemPrompt = document.getElementById("systemPrompt").value.trim();
+
+  try {
+    const resp = await fetch("/api/scan/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system_prompt: systemPrompt || undefined }),
+    });
+    const data = await resp.json();
+    if (data.error) { alert("Error: " + data.error); btn.disabled = false; return; }
+
+    activeScanId = data.scan_id;
+    document.getElementById("progressSection").style.display = "";
+    pollTimer = setInterval(pollStatus, 2000);
+    pollStatus();
+  } catch (e) {
+    alert("Failed to start scan: " + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start Scan';
+  }
+});
+
+async function pollStatus() {
+  if (!activeScanId) return;
+  try {
+    const resp = await fetch(`/api/scan/${activeScanId}/status`);
+    const d = await resp.json();
+
+    const pct = d.total ? Math.round(d.done / d.total * 100) : 0;
+    document.getElementById("progressBar").style.width = pct + "%";
+    document.getElementById("progressLabel").textContent = `${d.done} / ${d.total}`;
+    document.getElementById("progressPct").textContent = pct + "%";
+    document.getElementById("cntBlocked").textContent    = d.counts.BLOCKED    || 0;
+    document.getElementById("cntSuccessful").textContent = d.counts.SUCCESSFUL || 0;
+    document.getElementById("cntUnknown").textContent    = d.counts.UNKNOWN    || 0;
+    document.getElementById("cntError").textContent      = d.counts.ERROR      || 0;
+    document.getElementById("blockRate").textContent     = d.block_rate_pct + "%";
+
+    if (d.status === "complete") {
+      clearInterval(pollTimer);
+      document.querySelector("#progressSection .card-header .spinner-border").style.display = "none";
+      document.querySelector("#progressSection .card-header span.fw-semibold").textContent = "Scan complete!";
+      const btn = document.getElementById("btnStartScan");
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Start Scan';
+
+      // Redirect to the report
+      setTimeout(() => { window.location.href = `/scan/${activeScanId}`; }, 800);
+    }
+  } catch (e) {
+    console.error("Poll error:", e);
+  }
+}
+</script>
+{% endblock %}
