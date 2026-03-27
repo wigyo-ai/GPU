@@ -7,6 +7,8 @@ Environment variables required at runtime:
   H2OGPTE_LLM     — (optional) model name; server default used if omitted
 """
 
+import csv
+import io
 import json
 import os
 import threading
@@ -18,7 +20,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # load .env if present
 
-from flask import Flask, jsonify, render_template, request, session, send_file
+from flask import Flask, jsonify, render_template, request, session, send_file, make_response
 import garak_integration as gi
 import h2o_client
 
@@ -228,6 +230,51 @@ def scan_report(scan_id: str):
     if scan is None:
         return render_template("404.html"), 404
     return render_template("scan_report.html", scan=scan)
+
+
+@app.route("/scan/<scan_id>/export.csv")
+def scan_export_csv(scan_id: str):
+    """Download full scan results as a CSV file."""
+    scan = _scans.get(scan_id)
+    if scan is None:
+        return render_template("404.html"), 404
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "technique_id", "technique_name", "tactic_id", "tactic_name",
+        "severity", "verdict", "confidence_pct",
+        "probe_module", "probe_class",
+        "payload", "model_response",
+        "refusal_score", "compliance_score", "signals",
+        "error", "duration_s",
+    ])
+    for r in scan["results"]:
+        scoring = r.get("scoring") or {}
+        writer.writerow([
+            r.get("technique_id", ""),
+            r.get("technique_name", ""),
+            r.get("tactic_id", ""),
+            r.get("tactic_name", ""),
+            r.get("severity", ""),
+            r.get("verdict", ""),
+            r.get("confidence_pct", ""),
+            r.get("probe_module", ""),
+            r.get("probe_class", ""),
+            r.get("payload", ""),
+            r.get("model_response", ""),
+            scoring.get("refusal_score", ""),
+            scoring.get("compliance_score", ""),
+            "; ".join(scoring.get("signals") or []),
+            r.get("error") or "",
+            r.get("duration_s", ""),
+        ])
+
+    filename = f"atlas_scan_{scan_id}.csv"
+    response = make_response(buf.getvalue())
+    response.headers["Content-Type"] = "text/csv"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
 
 
 @app.route("/api/scan/run", methods=["POST"])
