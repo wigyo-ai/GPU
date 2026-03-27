@@ -7,6 +7,8 @@ Environment variables required at runtime:
   H2OGPTE_LLM     — (optional) model name; server default used if omitted
 """
 
+import json
+import os
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -14,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # load .env if present
 
-from flask import Flask, jsonify, render_template, request, session
+from flask import Flask, jsonify, render_template, request, session, send_file
 import garak_integration as gi
 import h2o_client
 
@@ -197,6 +199,31 @@ def api_execute():
         "scoring": scoring,
         "error": llm_error,
     })
+
+
+@app.route("/config")
+def config_page():
+    """Hardened config viewer — merged settings for all 32 ATLAS techniques."""
+    config_path = os.path.join(os.path.dirname(__file__), "hardened_config.json")
+    with open(config_path) as f:
+        config = json.load(f)
+    return render_template("config.html", config=config)
+
+
+@app.route("/api/config")
+def api_config():
+    """Return hardened_config.json as JSON."""
+    config_path = os.path.join(os.path.dirname(__file__), "hardened_config.json")
+    with open(config_path) as f:
+        config = json.load(f)
+    return jsonify(config)
+
+
+@app.route("/api/config/download")
+def api_config_download():
+    """Download hardened_config.json as a file."""
+    config_path = os.path.join(os.path.dirname(__file__), "hardened_config.json")
+    return send_file(config_path, as_attachment=True, download_name="h2o_gpte_hardened_config.json")
 
 
 # ── Error handlers ────────────────────────────────────────────────────────────

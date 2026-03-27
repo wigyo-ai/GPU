@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Hardened Config — ATLAS Red Team Harness{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-0 fw-bold" style="color:var(--atlas-accent)">
+      <i class="bi bi-shield-lock-fill me-2"></i>H2O GPTe Hardened Configuration
+    </h1>
+    <p class="text-secondary mb-0 small mt-1">
+      Merged settings from all {{ config.techniques_covered | length }} ATLAS techniques — apply once to harden your deployment.
+    </p>
+  </div>
+  <div class="ms-auto d-flex gap-2">
+    <a href="/api/config/download" class="btn btn-sm" style="background:var(--atlas-accent);color:#000;font-weight:600">
+      <i class="bi bi-download me-1"></i>Download JSON
+    </a>
+    <a href="/" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+  </div>
+</div>
+
+<!-- Coverage banner -->
+<div class="alert mb-4" style="background:rgba(0,212,255,0.07);border:1px solid rgba(0,212,255,0.25);color:#ccc">
+  <i class="bi bi-info-circle-fill me-2" style="color:var(--atlas-accent)"></i>
+  This configuration merges the recommended settings across all 32 supported techniques.
+  Apply it to your H2O GPTe deployment to provide broad coverage against all mapped ATLAS attack vectors.
+  Run <code>python apply_hardened_config.py --help</code> to apply via CLI, or copy individual sections below.
+</div>
+
+<!-- Techniques covered -->
+<div class="card mb-4">
+  <div class="card-header py-2 d-flex align-items-center gap-2">
+    <i class="bi bi-check2-all" style="color:var(--atlas-accent)"></i>
+    <span class="fw-bold text-white">Techniques Covered ({{ config.techniques_covered | length }})</span>
+  </div>
+  <div class="card-body py-2">
+    <div class="d-flex flex-wrap gap-2">
+      {% for t in config.techniques_covered %}
+      <a href="/technique/{{ t }}" class="badge text-decoration-none"
+         style="background:rgba(0,212,255,0.1);color:#00d4ff;font-size:0.78rem;font-weight:500">
+        {{ t }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Section: guardrails_settings -->
+<div class="card mb-4">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <i class="bi bi-shield-check" style="color:#86efac"></i>
+    <div>
+      <div class="fw-bold text-white">guardrails_settings</div>
+      <div class="text-secondary" style="font-size:0.72rem">
+        Apply via <code>answer_question(guardrails_settings={{...}})</code> or
+        <code>update_collection_settings()</code>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary ms-auto copy-btn"
+            data-target="gs-json">
+      <i class="bi bi-clipboard me-1"></i>Copy
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <pre id="gs-json" class="mb-0 p-3" style="background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:0.78rem;overflow-x:auto;border-radius:0 0 8px 8px">{{ config.guardrails_settings | tojson(indent=2) }}</pre>
+  </div>
+</div>
+
+<!-- Section: llm_args -->
+<div class="card mb-4">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <i class="bi bi-sliders" style="color:#fbbf24"></i>
+    <div>
+      <div class="fw-bold text-white">llm_args</div>
+      <div class="text-secondary" style="font-size:0.72rem">
+        Apply via <code>answer_question(llm_args={{...}})</code>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary ms-auto copy-btn"
+            data-target="la-json">
+      <i class="bi bi-clipboard me-1"></i>Copy
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <pre id="la-json" class="mb-0 p-3" style="background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:0.78rem;border-radius:0 0 8px 8px">{{ config.llm_args | tojson(indent=2) }}</pre>
+  </div>
+</div>
+
+<!-- Section: system_prompt -->
+<div class="card mb-4">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <i class="bi bi-chat-square-text" style="color:#c084fc"></i>
+    <div>
+      <div class="fw-bold text-white">system_prompt</div>
+      <div class="text-secondary" style="font-size:0.72rem">
+        Apply via <code>answer_question(system_prompt="...")</code>
+      </div>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary ms-auto copy-btn"
+            data-target="sp-text">
+      <i class="bi bi-clipboard me-1"></i>Copy
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <pre id="sp-text" class="mb-0 p-3" style="background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:0.78rem;white-space:pre-wrap;border-radius:0 0 8px 8px">{{ config.system_prompt }}</pre>
+  </div>
+</div>
+
+<!-- Section: chat_settings -->
+<div class="card mb-4">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <i class="bi bi-chat-dots" style="color:#60a5fa"></i>
+    <div>
+      <div class="fw-bold text-white">chat_settings</div>
+      <div class="text-secondary" style="font-size:0.72rem">
+        Apply via <code>ChatSettings</code> object in session or collection creation
+      </div>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary ms-auto copy-btn"
+            data-target="cs-json">
+      <i class="bi bi-clipboard me-1"></i>Copy
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <pre id="cs-json" class="mb-0 p-3" style="background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:0.78rem;border-radius:0 0 8px 8px">{{ config.chat_settings | tojson(indent=2) }}</pre>
+  </div>
+</div>
+
+<!-- Section: admin_settings -->
+<div class="card mb-4">
+  <div class="card-header py-3 d-flex align-items-center gap-2">
+    <i class="bi bi-gear-wide-connected" style="color:#f87171"></i>
+    <div>
+      <div class="fw-bold text-white">admin_settings</div>
+      <div class="text-secondary" style="font-size:0.72rem">
+        Apply via <code>client.set_global_configuration()</code> — requires admin API key
+      </div>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary ms-auto copy-btn"
+            data-target="as-json">
+      <i class="bi bi-clipboard me-1"></i>Copy
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <pre id="as-json" class="mb-0 p-3" style="background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:0.78rem;border-radius:0 0 8px 8px">{{ config.admin_settings | tojson(indent=2) }}</pre>
+  </div>
+</div>
+
+<!-- Apply CLI instructions -->
+<div class="card mb-4" style="border-color:rgba(0,212,255,0.3)">
+  <div class="card-header py-3" style="background:rgba(0,212,255,0.05)">
+    <div class="fw-bold text-white">
+      <i class="bi bi-terminal me-2" style="color:var(--atlas-accent)"></i>Apply via CLI
+    </div>
+  </div>
+  <div class="card-body">
+    <p class="text-secondary small mb-3">
+      Run <code>apply_hardened_config.py</code> to push the settings to your H2O GPTe deployment:
+    </p>
+    <pre style="background:rgba(0,0,0,0.4);color:#86efac;padding:1rem;border-radius:6px;font-size:0.82rem"># Preview what will be applied (no changes made)
+python apply_hardened_config.py --dry-run
+
+# Apply to a specific collection
+python apply_hardened_config.py --collection &lt;your-collection-id&gt;
+
+# Just print the answer_question() snippet
+python apply_hardened_config.py --snippet-only
+
+# Apply to collection + set admin rate limits
+python apply_hardened_config.py --collection &lt;id&gt;</pre>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll(".copy-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const target = document.getElementById(btn.dataset.target);
+    navigator.clipboard.writeText(target.textContent).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied';
+      btn.classList.add("btn-outline-success");
+      btn.classList.remove("btn-outline-secondary");
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.classList.remove("btn-outline-success");
+        btn.classList.add("btn-outline-secondary");
+      }, 1800);
+    });
+  });
+});
+</script>
+{% endblock %}
