@@ -59,6 +59,7 @@ def technique(technique_id: str):
         technique_id=technique_id,
         technique=tech,
         tactic=tactic,
+        mitigations=gi.TECHNIQUE_MITIGATIONS.get(technique_id, []),
     )
 
 
